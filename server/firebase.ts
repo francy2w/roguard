@@ -25,12 +25,26 @@ function loadServiceAccount(): admin.ServiceAccount | undefined {
   return undefined;
 }
 
-if (!admin.apps.length) {
-  const credential = admin.credential.cert(loadServiceAccount() as any);
-  admin.initializeApp({
-    credential,
-    databaseURL: process.env.FIREBASE_DB_URL,
-  });
+// During unit tests we don't have a service account configured
+// and none of the code actually hits Firebase (we spy on logAuthEvent),
+// so skip initialization entirely to avoid esbuild errors about the
+// credential object being undefined.
+if (process.env.NODE_ENV === "test") {
+  // no-op
+} else if (!admin.apps.length) {
+  const service = loadServiceAccount();
+  if (service) {
+    const credential = admin.credential.cert(service as any);
+    admin.initializeApp({
+      credential,
+      databaseURL: process.env.FIREBASE_DB_URL,
+    });
+  } else {
+    // fall back to default credentials (e.g. GOOGLE_APPLICATION_CREDENTIALS)
+    admin.initializeApp({
+      databaseURL: process.env.FIREBASE_DB_URL,
+    });
+  }
 }
 
 export const realtimeDb = admin.database();

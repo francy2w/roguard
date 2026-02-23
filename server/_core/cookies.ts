@@ -39,10 +39,17 @@ export function getSessionCookieOptions(
   //       ? hostname
   //       : undefined;
 
+  // Most of our traffic is same‑site (frontend and API share the
+  // origin), so using `SameSite=lax` is both safer and avoids the
+  // requirement that `secure` be true.  Previously we used `none` which
+  // paired with a false `secure` value (common behind proxies that don't
+  // forward `x-forwarded-proto`) caused browsers to silently drop the
+  // cookie entirely.  That was the root cause of guest logins immediately
+  // bouncing back to `/auth/login` in production.
   return {
     httpOnly: true,
     path: "/",
-    sameSite: "none",
+    sameSite: "lax",
     secure: isSecureRequest(req),
   };
 }

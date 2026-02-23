@@ -105,6 +105,14 @@ describe("email normalization and SDK behavior", () => {
     await expect(sdk.registerUser("a@b.com", "pw")).rejects.toThrow("no db");
     await expect(sdk.loginUser("a@b.com", "pw")).rejects.toThrow("no db");
   });
+
+  it("creates a guest user and returns it", async () => {
+    const fakeGuest: any = { id: 99, email: "guest_x@guest.local", role: "user" };
+    vi.spyOn(db, "createUser").mockResolvedValue(fakeGuest as any);
+
+    const guest = await sdk.createGuestUser();
+    expect(guest).toEqual(fakeGuest);
+  });
 });
 
 // ─── Auth Router Tests ────────────────────────────────────────────────────────
@@ -121,6 +129,28 @@ describe("auth.logout", () => {
     expect(result.success).toBe(true);
     expect(clearedCookies).toHaveLength(1);
     expect(clearedCookies[0]?.options).toMatchObject({ maxAge: -1, httpOnly: true });
+  });
+});
+
+// ensure guest login route sets a cookie as well
+
+describe("auth.loginGuest", () => {
+  it("creates a guest user and sends a session cookie", async () => {
+    const cookieCalls: { name: string; options: Record<string, unknown> }[] = [];
+    const ctx: TrpcContext = {
+      user: null,
+      req: { protocol: "https", headers: {} } as TrpcContext["req"],
+      res: { cookie: (name: string, options: Record<string, unknown>) => cookieCalls.push({ name, options }) } as TrpcContext["res"],
+    };
+    const fakeGuest: any = { id: 7, email: "guest@guest.local", role: "user" };
+    vi.spyOn(sdk, "createGuestUser").mockResolvedValue(fakeGuest as any);
+
+    const caller = appRouter.createCaller(ctx);
+    const result = await caller.auth.loginGuest();
+
+    expect(result).toEqual({ success: true, user: fakeGuest });
+    expect(cookieCalls).toHaveLength(1);
+    expect(cookieCalls[0].options).toMatchObject({ httpOnly: true });
   });
 });
 
