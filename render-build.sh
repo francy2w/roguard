@@ -10,6 +10,13 @@ echo "Installing dependencies (frozen lockfile)"
 pnpm install --frozen-lockfile
 
 echo "Building project"
+# Safety: ensure no references to native bcrypt remain
+echo "Verifying no native 'bcrypt' imports remain in source..."
+if grep -R --exclude-dir=node_modules --exclude-dir=dist "\bbcrypt\b" .; then
+	echo "Error: found 'bcrypt' references in repository. Please migrate to 'bcryptjs' before building." >&2
+	exit 2
+fi
+
 pnpm build
 
 echo "Build complete"
