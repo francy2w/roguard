@@ -105,11 +105,26 @@ export default function Login() {
               </div>
             </div>
 
-            <Link href="/auth/guest">
-              <Button variant="outline" className="w-full" size="lg" type="button">
-                Continue as Guest
-              </Button>
-            </Link>
+            {/* direct guest login without going through separate page */}
+            <Button
+              variant="outline"
+              className="w-full"
+              size="lg"
+              type="button"
+              onClick={async () => {
+                try {
+                  await trpc.auth.loginGuest.mutateAsync();
+                  navigate("/dashboard");
+                } catch (err: any) {
+                  const msg = err.data?.message ?? err.message ?? "Unable to login as guest";
+                  setError(msg);
+                  toast.error(msg);
+                }
+              }}
+              disabled={loginMutation.isPending}
+            >
+              Continue as Guest
+            </Button>
           </div>
 
           <div className="mt-6 text-center text-sm">
