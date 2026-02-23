@@ -1,4 +1,9 @@
-#!/usr/bin/env bash
+server/
+├── firebase.ts          # inicialización admin
+├── auth.ts              # registerUser/loginUser
+├── llm.ts               # helper de IA (como hoy)
+├── routers.ts           # tRPC/Express con /auth/register,/auth/login,/ai/chat
+…#!/usr/bin/env bash
 set -euo pipefail
 
 # Helper script to ensure Corepack + pnpm are enabled and run install/build

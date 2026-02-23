@@ -5,6 +5,8 @@ import type { Request } from "express";
 import { SignJWT, jwtVerify } from "jose";
 import type { User } from "../../drizzle/schema";
 import * as db from "../db";
+import { logAuthEvent } from "../firebase"; // write auth logs to firebase realtime database
+
 
 const isNonEmptyString = (value: unknown): value is string =>
   typeof value === "string" && value.length > 0;
@@ -134,8 +136,12 @@ class SDKServer {
       // if createUser failed due to a database issue we want to propagate an
       // error rather than silently return null (which would be misinterpreted
       // by callers as "already registered").
+      logAuthEvent({ action: "register", email: normalized, success: false });
       throw new Error("Failed to create user (database error)");
     }
+
+    // log to realtime database
+    logAuthEvent({ action: "register", userId: user.id, email: normalized, success: true });
     return user;
   }
 
@@ -151,14 +157,17 @@ class SDKServer {
 
     const isPasswordValid = await this.verifyPassword(password, user.passwordHash);
     if (!isPasswordValid) {
+      logAuthEvent({ action: "login", email: normalized, success: false });
       return null; // Invalid password
     }
 
     if (user.isBanned) {
+      logAuthEvent({ action: "login", userId: user.id, email: normalized, success: false, reason: "banned" });
       return null; // User is banned
     }
 
     await db.updateUserLastSignedIn(user.id);
+    logAuthEvent({ action: "login", userId: user.id, email: normalized, success: true });
     return user;
   }
 

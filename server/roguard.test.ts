@@ -2,6 +2,7 @@ import { describe, expect, it, vi, beforeEach } from "vitest";
 import { obfuscateLua } from "./obfuscator";
 import { appRouter } from "./routers";
 import { sdk } from "./_core/sdk";
+import * as firebase from "./firebase";
 import bcrypt from "bcryptjs";
 import type { TrpcContext } from "./_core/context";
 
@@ -66,6 +67,11 @@ import * as llm from "./_core/llm";
 
 
 describe("email normalization and SDK behavior", () => {
+  beforeEach(() => {
+    // stub out realtime logging so tests don't hit Firebase
+    vi.spyOn(firebase, "logAuthEvent").mockImplementation(() => {});
+  });
+
   it("normalize email during login and registration", async () => {
     const fakeUser: any = {
       id: 42,
@@ -82,10 +88,16 @@ describe("email normalization and SDK behavior", () => {
     const registered = await sdk.registerUser(" TEST@Example.com ", "secret");
     expect(createSpy).toHaveBeenCalledWith("test@example.com", expect.any(String), undefined);
     expect(registered).toEqual(fakeUser);
+    expect(firebase.logAuthEvent).toHaveBeenCalledWith(
+      expect.objectContaining({ action: "register", email: "test@example.com", success: true })
+    );
 
     const logged = await sdk.loginUser(" TEST@Example.COM ", "secret");
     expect(logged).not.toBeNull();
     expect(getSpy).toHaveBeenCalledWith("test@example.com");
+    expect(firebase.logAuthEvent).toHaveBeenCalledWith(
+      expect.objectContaining({ action: "login", email: "test@example.com", success: true })
+    );
   });
 
   it("propagates database errors instead of silently failing", async () => {

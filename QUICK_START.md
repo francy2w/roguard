@@ -2,7 +2,25 @@
 
 ## 📌 Before You Deploy
 
+This project now optionally writes authentication events (login/register) to a
+Firebase Realtime Database.  To enable it you must supply a service account
+and database URL via environment variables (see below).
+
 Copy and run these commands in order:
+
+### 1️⃣ Install Dependencies
+
+> **Firebase setup (optional but recommended):**
+> * Create a service account JSON in your Firebase project.
+> * In your environment add either `FIREBASE_SERVICE_ACCOUNT_PATH` pointing to
+>   the file or `FIREBASE_SERVICE_ACCOUNT` containing the serialized JSON.
+> * Set `FIREBASE_DB_URL` to the realtime database URL (e.g.
+>   `https://<project>.firebaseio.com`).
+> * When running locally you can export these vars in your shell or store them
+>   in a `.env` file that `dotenv` loads.
+> 
+> Logs will be written under the `authLogs` node and are primarily for audit
+> purposes; missing/incorrect configuration only results in console warnings.
 
 ### 1️⃣ Install Dependencies
 ```bash
