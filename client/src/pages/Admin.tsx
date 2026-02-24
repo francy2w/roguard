@@ -136,6 +136,7 @@ export default function Admin() {
           </tbody>
         </table>
       </section>
+      )}
 
       {canManageInvites && (
         <section className="mb-8">
